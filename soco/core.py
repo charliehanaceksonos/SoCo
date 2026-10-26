@@ -2874,16 +2874,13 @@ class SoCo(_SocoSingletonBase):
         else:
             return None
 
-    def check_for_update(self, cached_only=True, timeout=None):
+    def check_for_update(self, timeout=None):
         """Check whether a software update is available for this speaker.
 
-        The speaker reports the household's update manifest, and the target
-        version for this speaker is looked up in it, the same way the speaker
-        does when the household updates.
+        The speaker asks the update server for the household's update
+        manifest, and the target version for this speaker is looked up in it.
 
         Args:
-            cached_only (bool): Use the result of the speaker's last update
-                check instead of asking the update server again.
             timeout: How long to wait for the manifest download, passed to
                 `requests.get`.
 
@@ -2894,7 +2891,7 @@ class SoCo(_SocoSingletonBase):
         response = self.zoneGroupTopology.CheckForUpdate(
             [
                 ("UpdateType", "Software"),
-                ("CachedOnly", "1" if cached_only else "0"),
+                ("CachedOnly", "0"),
                 ("Version", ""),
             ]
         )

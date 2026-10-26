@@ -173,7 +173,7 @@ def test_check_for_update(core_requests, update_requests):
         update_requests.get.return_value.content = MANIFEST
         status = speaker.check_for_update()
     speaker.zoneGroupTopology.CheckForUpdate.assert_called_once_with(
-        [("UpdateType", "Software"), ("CachedOnly", "1"), ("Version", "")]
+        [("UpdateType", "Software"), ("CachedOnly", "0"), ("Version", "")]
     )
     update_requests.get.assert_called_once_with(
         "http://update.example.com/update.upm", timeout=None
