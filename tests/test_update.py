@@ -213,7 +213,7 @@ def test_monitor_update_waits_for_upgrade_app(create_connection, sleep):
     assert create_connection.call_count == 3
 
 
-@mock.patch("soco.update.time.monotonic", side_effect=[0, 30, 61])
+@mock.patch("soco.update.time.monotonic", side_effect=[0, 150, 301])
 @mock.patch("soco.update.time.sleep")
 @mock.patch("soco.update.socket.create_connection")
 def test_monitor_update_connect_timeout(create_connection, sleep, monotonic):

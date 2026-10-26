@@ -227,7 +227,7 @@ class UpdateManifest:
         return version, url
 
 
-def monitor_update(ip_address, timeout=60, connect_timeout=60):
+def monitor_update(ip_address, timeout=60, connect_timeout=300):
     """Read the progress of a monitored update from a speaker.
 
     Start the update with :meth:`~soco.core.SoCo.begin_software_update` and
@@ -237,7 +237,7 @@ def monitor_update(ip_address, timeout=60, connect_timeout=60):
     the update failed.
 
     The speaker only listens for monitoring connections once its upgrade has
-    started, about ten seconds after
+    started, which can take from ten seconds to a couple of minutes after
     :meth:`~soco.core.SoCo.begin_software_update` returns, so connecting is
     retried until ``connect_timeout``.
 
