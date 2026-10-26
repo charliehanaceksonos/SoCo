@@ -194,3 +194,30 @@ def test_begin_software_update():
             ("ExtraOptions", ""),
         ]
     )
+
+
+@mock.patch("soco.update.time.sleep")
+@mock.patch("soco.update.socket.create_connection")
+def test_monitor_update_waits_for_upgrade_app(create_connection, sleep):
+    sock = mock.MagicMock()
+    sock.__enter__.return_value.makefile.return_value = _sducp_lines(
+        "STATUS?phase=DOWNLOAD;percent-complete=12",
+    )
+    create_connection.side_effect = [
+        ConnectionRefusedError,
+        ConnectionRefusedError,
+        sock,
+    ]
+    progress = list(update.monitor_update("192.168.1.10"))
+    assert progress == [update.UpdateProgress("DOWNLOAD", 12)]
+    assert create_connection.call_count == 3
+
+
+@mock.patch("soco.update.time.monotonic", side_effect=[0, 30, 61])
+@mock.patch("soco.update.time.sleep")
+@mock.patch("soco.update.socket.create_connection")
+def test_monitor_update_connect_timeout(create_connection, sleep, monotonic):
+    create_connection.side_effect = ConnectionRefusedError
+    with pytest.raises(ConnectionRefusedError):
+        list(update.monitor_update("192.168.1.10"))
+    assert create_connection.call_count == 2

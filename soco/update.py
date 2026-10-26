@@ -13,6 +13,7 @@ Protocol (SDUCP), a line based protocol on TCP port 4444.
 
 import logging
 import socket
+import time
 from collections import namedtuple
 
 import requests
@@ -226,7 +227,7 @@ class UpdateManifest:
         return version, url
 
 
-def monitor_update(ip_address, timeout=60):
+def monitor_update(ip_address, timeout=60, connect_timeout=60):
     """Read the progress of a monitored update from a speaker.
 
     Start the update with :meth:`~soco.core.SoCo.begin_software_update` and
@@ -235,9 +236,16 @@ def monitor_update(ip_address, timeout=60):
     if the connection drops, so a failure to connect or read doesn't mean
     the update failed.
 
+    The speaker only listens for monitoring connections once its upgrade has
+    started, about ten seconds after
+    :meth:`~soco.core.SoCo.begin_software_update` returns, so connecting is
+    retried until ``connect_timeout``.
+
     Args:
         ip_address (str): The speaker's IP address.
         timeout (float): Socket timeout in seconds.
+        connect_timeout (float): How long to keep trying to connect, in
+            seconds.
 
     Yields:
         UpdateProgress: Each progress report.
@@ -245,7 +253,7 @@ def monitor_update(ip_address, timeout=60):
     Raises:
         SoftwareUpdateError: If the speaker reports that the update failed.
     """
-    with socket.create_connection((ip_address, SDUCP_PORT), timeout=timeout) as sock:
+    with _connect(ip_address, timeout, connect_timeout) as sock:
         for line in sock.makefile("r", encoding="utf-8", newline="\n"):
             command, _, args = line.strip().partition("?")
             params = dict(arg.split("=", 1) for arg in args.split(";") if "=" in arg)
@@ -260,3 +268,15 @@ def monitor_update(ip_address, timeout=60):
                     params.get("error-code"),
                     params.get("internal-data"),
                 )
+
+
+def _connect(ip_address, timeout, connect_timeout):
+    """Connect to a speaker's SDUCP port, retrying until it accepts."""
+    deadline = time.monotonic() + connect_timeout
+    while True:
+        try:
+            return socket.create_connection((ip_address, SDUCP_PORT), timeout=timeout)
+        except ConnectionRefusedError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.5)
